@@ -1,14 +1,34 @@
+"""
+Модуль обработчиков команд для CLI.
+
+Содержит класс для обработки аргументов командной строки
+и выполнения соответствующих действий.
+"""
+
+import argparse
 from .storage import Storage
 from .report import ReportGenerator
-import argparse
 
 
 class CommandHandler:
+    """Класс для обработки команд командной строки.
+
+    Attributes:
+        storage (Storage): Объект хранилища данных.
+        report_generator (ReportGenerator): Объект генератора отчетов.
+    """
+
     def __init__(self):
+        """Инициализирует обработчик команд."""
         self.storage = Storage()
         self.report_generator = ReportGenerator(self.storage)
 
     def handle_add(self, args):
+        """Обрабатывает команду добавления нового расхода.
+
+        Args:
+            args: Аргументы командной строки для команды add.
+        """
         try:
             category_id = None
             categories = self.storage.get_categories()
@@ -40,6 +60,11 @@ class CommandHandler:
             print(f"❌ Ошибка: {e}")
 
     def handle_list(self, args):
+        """Обрабатывает команду просмотра расходов.
+
+        Args:
+            args: Аргументы командной строки для команды list.
+        """
         try:
             expenses = self.storage.get_expenses(args.period)
             categories = {cat.id: cat for cat in self.storage.get_categories()}
@@ -64,6 +89,11 @@ class CommandHandler:
             print(f"❌ Ошибка: {e}")
 
     def handle_report(self, args):
+        """Обрабатывает команду генерации отчета.
+
+        Args:
+            args: Аргументы командной строки для команды report.
+        """
         try:
             report = self.report_generator.generate_category_report(
                 period=args.period,
@@ -79,6 +109,11 @@ class CommandHandler:
             print(f"❌ Ошибка: {e}")
 
     def handle_categories(self, args):
+        """Обрабатывает команду просмотра категорий.
+
+        Args:
+            args: Аргументы командной строки для команды categories.
+        """
         try:
             categories = self.storage.get_categories()
 
@@ -90,6 +125,11 @@ class CommandHandler:
             print(f"❌ Ошибка: {e}")
 
     def handle_delete(self, args):
+        """Обрабатывает команду удаления расхода.
+
+        Args:
+            args: Аргументы командной строки для команды delete.
+        """
         try:
             if self.storage.delete_expense(args.id):
                 print(f"✅ Расход с ID {args.id} удален")

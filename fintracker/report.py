@@ -1,15 +1,45 @@
+"""
+Модуль для генерации отчетов по расходам.
+
+Предоставляет функционал для создания отчетов по категориям
+и экспорта в различные форматы.
+"""
+
 import csv
 import json
-from typing import List, Dict
+from typing import List, Dict, Optional
 from datetime import datetime
 from .models import Expense, Category
 
 
 class ReportGenerator:
+    """Класс для генерации финансовых отчетов.
+
+    Attributes:
+        storage (Storage): Объект хранилища для доступа к данным.
+    """
+
     def __init__(self, storage):
+        """Инициализирует генератор отчетов.
+
+        Args:
+            storage (Storage): Объект хранилища данных.
+        """
         self.storage = storage
 
-    def generate_category_report(self, period: str = "month", output_file: str = None) -> Dict:
+    def generate_category_report(self, period: str = "month", output_file: Optional[str] = None) -> Dict:
+        """Генерирует отчет по расходам по категориям.
+
+        Args:
+            period (str, optional): Период для отчета.
+                Допустимые значения: "day", "week", "month", "year", "all".
+                По умолчанию "month".
+            output_file (Optional[str], optional): Путь для сохранения отчета.
+                Если указан, отчет сохраняется в файл.
+
+        Returns:
+            Dict: Словарь с данными отчета.
+        """
         try:
             expenses = self.storage.get_expenses(period)
             categories = self.storage.get_categories()
@@ -51,6 +81,15 @@ class ReportGenerator:
             return {}
 
     def _save_report_to_file(self, report: Dict, output_file: str):
+        """Сохраняет отчет в файл в указанном формате.
+
+        Args:
+            report (Dict): Данные отчета.
+            output_file (str): Путь к файлу для сохранения.
+
+        Raises:
+            IOError: Если произошла ошибка записи в файл.
+        """
         try:
             if output_file.endswith('.json'):
                 with open(output_file, 'w', encoding='utf-8') as f:
@@ -77,6 +116,11 @@ class ReportGenerator:
             print(f"Ошибка при сохранении отчета: {e}")
 
     def print_report(self, report: Dict):
+        """Выводит отчет в консоль в удобочитаемом формате.
+
+        Args:
+            report (Dict): Данные отчета для вывода.
+        """
         print(f"\n=== ОТЧЕТ ПО РАСХОДАМ ===")
         print(f"Период: {report['period']}")
         print(f"Сгенерирован: {report['generated_at']}")
