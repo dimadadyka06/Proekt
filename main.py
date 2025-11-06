@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Главный модуль финансового трекера расходов.
 
@@ -7,7 +6,7 @@
 
 import argparse
 import sys
-from fintracker.commands import CommandHandler
+from fintracker.command import CommandHandler
 
 
 def main():
