@@ -51,26 +51,27 @@ class Storage:
 
         Returns:
             Dict: Словарь с данными из файла.
-
-        Raises:
-            FileNotFoundError: Если файл не найден.
-            json.JSONDecodeError: Если файл содержит некорректный JSON.
         """
         try:
             with open(self.data_file, 'r', encoding='utf-8') as f:
-                return json.load(f)
+                data = json.load(f)
+                # Проверяем, что данные имеют правильную структуру
+                if not all(key in data for key in ['expenses', 'categories', 'next_id']):
+                    raise json.JSONDecodeError("Invalid structure", "", 0)
+                return data
         except (FileNotFoundError, json.JSONDecodeError) as e:
             print(f"Ошибка загрузки данных: {e}")
-            return {'expenses': [], 'categories': [], 'next_id': 1}
+            # Создаем новый файл с начальными данными
+            self._ensure_data_file_exists()
+            # Загружаем снова
+            with open(self.data_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
 
     def _save_data(self, data: Dict):
         """Сохраняет данные в JSON-файл.
 
         Args:
             data (Dict): Данные для сохранения.
-
-        Raises:
-            IOError: Если произошла ошибка записи в файл.
         """
         try:
             with open(self.data_file, 'w', encoding='utf-8') as f:
@@ -79,7 +80,7 @@ class Storage:
             print(f"Ошибка сохранения данных: {e}")
 
     def add_expense(self, category_id: int, amount: float, description: str,
-                    expense_date: Optional[str] = None) -> bool:
+                   expense_date: Optional[str] = None) -> bool:
         """Добавляет новую запись о расходе.
 
         Args:
