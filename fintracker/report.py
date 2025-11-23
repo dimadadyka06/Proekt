@@ -1,8 +1,5 @@
 """
-Модуль для генерации отчетов по расходам.
-
-Предоставляет функционал для создания отчетов по категориям
-и экспорта в различные форматы.
+Модуль для генерации отчетов по расходам из базы данных.
 """
 
 import csv
@@ -10,13 +7,14 @@ import json
 from typing import List, Dict, Optional
 from datetime import datetime
 from .models import Expense, Category
+from .database import Database
 
 
 class ReportGenerator:
-    """Класс для генерации финансовых отчетов.
+    """Класс для генерации финансовых отчетов из БД.
 
     Attributes:
-        storage (Storage): Объект хранилища для доступа к данным.
+        database (Database): Объект базы данных для доступа к данным.
     """
 
     def __init__(self, storage):
@@ -26,9 +24,10 @@ class ReportGenerator:
             storage (Storage): Объект хранилища данных.
         """
         self.storage = storage
+        self.database = storage.database
 
     def generate_category_report(self, period: str = "month", output_file: Optional[str] = None) -> Dict:
-        """Генерирует отчет по расходам по категориям.
+        """Генерирует отчет по расходам по категориям из БД.
 
         Args:
             period (str, optional): Период для отчета.
@@ -41,36 +40,17 @@ class ReportGenerator:
             Dict: Словарь с данными отчета.
         """
         try:
-            expenses = self.storage.get_expenses(period)
-            categories = self.storage.get_categories()
+            # Используем метод базы данных для получения статистики
+            category_stats = self.database.get_category_stats(period)
 
-            category_totals = {}
-            category_counts = {}
-
-            for category in categories:
-                category_totals[category.id] = {'amount': 0, 'name': category.name}
-                category_counts[category.id] = 0
-
-            for expense in expenses:
-                cat_id = expense.category_id
-                if cat_id in category_totals:
-                    category_totals[cat_id]['amount'] += expense.amount
-                    category_counts[cat_id] += 1
+            total_expenses = sum(stat['total_amount'] for stat in category_stats)
 
             report = {
                 'period': period,
                 'generated_at': datetime.now().isoformat(),
-                'total_expenses': sum(cat['amount'] for cat in category_totals.values()),
-                'categories': []
+                'total_expenses': total_expenses,
+                'categories': category_stats
             }
-
-            for cat_id, totals in category_totals.items():
-                if totals['amount'] > 0:
-                    report['categories'].append({
-                        'category_name': totals['name'],
-                        'amount': totals['amount'],
-                        'transaction_count': category_counts[cat_id]
-                    })
 
             if output_file:
                 self._save_report_to_file(report, output_file)
@@ -86,9 +66,6 @@ class ReportGenerator:
         Args:
             report (Dict): Данные отчета.
             output_file (str): Путь к файлу для сохранения.
-
-        Raises:
-            IOError: Если произошла ошибка записи в файл.
         """
         try:
             if output_file.endswith('.json'):
@@ -103,7 +80,7 @@ class ReportGenerator:
                     for category in report['categories']:
                         writer.writerow([
                             category['category_name'],
-                            category['amount'],
+                            category['total_amount'],
                             category['transaction_count']
                         ])
 
@@ -128,7 +105,7 @@ class ReportGenerator:
 
         for category in report['categories']:
             print(f"{category['category_name']}:")
-            print(f"  Сумма: {category['amount']:.2f} ₽")
+            print(f"  Сумма: {category['total_amount']:.2f} ₽")
             print(f"  Операций: {category['transaction_count']}")
             print()
 
